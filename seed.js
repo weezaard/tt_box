@@ -1,5 +1,6 @@
 const Asset = require('./model/Asset');
 const Instrument = require('./model/Instrument');
+const Property = require('./model/Property');
 const Cache = require('./cache');
 
 let assets = [
@@ -7,6 +8,16 @@ let assets = [
     [ 'ETH', 'Ethereum' ],
     [ 'LTC', 'Litecoin' ],
     [ 'XMR', 'Monero' ]
+];
+
+let properties = [
+    [ 'index', '' ],
+    [ 'perc_change', '' ],
+    [ 'rank_perc_change', '' ],
+    [ 'naklon', '' ],
+    [ 'DMA7', '' ],
+    [ 'DMA7_naklon', '' ],
+    [ 'DMA7_perc_change', '' ],
 ];
 
 /*
@@ -25,9 +36,15 @@ module.exports.bulkCreate = function() {
         Asset.bulkCreate(
             assets.map(a => { return { name: a[0], long_name: a[1]} })  // create Asset object from array
         ).then((arrOfAssets) => {
-            arrOfAssets.map(a => Cache.entityCache.set(a.name, a));
+            arrOfAssets.map(a => Cache.assetCache.set(a.name, a));
         })
-        //.then(() => { console.log('btc cache = ' + Cache.entityCache.get('BTC').name)}).then()        
+        .then(() => { console.log('btc cache = ' + Cache.assetCache.get('BTC').name)}).then()        
+        ,
+        Property.bulkCreate(
+            properties.map(p => { return { name: p[0], formula: p[1] } })
+        ).then((arrOfProperties) => {
+            arrOfProperties.map(p => Cache.propertyCache.set(p.name, p));
+        })
     ]);
     return promiseAll;
 }
