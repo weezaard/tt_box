@@ -5,6 +5,8 @@ const Cache = require('./cache');
 
 const Asset = require('./model/Asset');
 const Instrument = require('./model/Instrument');
+const Property = require('./model/Property');
+const PropertyValue = require('./model/PropertyValue');
 
 const util = require('./modules/util.js');
 
@@ -12,28 +14,42 @@ var syncOptions = {
     force: true
 };
 
+/**
+ * Associactions definitions
+ */
 Instrument.belongsTo(Asset);
+PropertyValue.belongsTo(Property, { foreignKey: 'property_name' });
 
 let promiseAsset = new Promise((resolve, reject) => {
     Asset.sync(syncOptions).then(() => {
         return Instrument.sync(syncOptions);    
     }).then((o) => {
         resolve(o);
-        //Config.getSequelize().close();
     }).catch((err) => {
-        console.error('Prislo je do napake pri sinhronizaciji baze.', err);
+        console.error('Prislo je do napake pri sinhronizaciji Asset objektov.', err);
+        reject(err);
+    });
+});
+
+let promiseProperty = new Promise((resolve, reject) => {
+    Property.sync(syncOptions).then(() => {
+        return PropertyValue.sync(syncOptions);    
+    }).then((o) => {
+        resolve(o);
+    }).catch((err) => {
+        console.error('Prislo je do napake pri sinhronizaciji Property objektov.', err);
         reject(err);
     });
 });
 
 module.exports.syncDb = Promise.all([ 
-    promiseAsset
+    promiseAsset, promiseProperty
 ]);
 
 module.exports.importInstrumentsForAsset = async function(data, asset_name) {
-    var asset = Cache.entityCache.get(asset_name);
+    var asset = Cache.assetCache.get(asset_name);
     console.log('asset_name='+asset_name);
-    console.log('cache='+Cache.entityCache.get('BTC').name);
+    console.log('cache='+Cache.assetCache.get('BTC').name);
 
     return Promise.all(data.map((entry) => {
         return Instrument.create({
