@@ -1,0 +1,18 @@
+{
+  "name": "ttrader",
+  "version": "1.0.0",
+  "description": "TechnoTrader",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matjaz Bohoric & Gorazd Pangric",
+  "license": "ISC",
+  "dependencies": {
+    "date-and-time": "^0.6.2",
+    "lru-cache": "^4.1.2",
+    "pg": "^7.4.1",
+    "sequelize": "^4.37.5",
+    "xlsx": "^0.12.7"
+  }
+}
