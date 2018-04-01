@@ -3,9 +3,11 @@ var LRU = require("lru-cache")
               , length: function (n, key) { return n * 2 + key.length }
               , dispose: function (key, n) { n.close() }
               , maxAge: 1000 * 60 * 60 }
-  , entityCache = LRU(options);
+  , assetCache = LRU(options)
+  , propertyCache = LRU(options);
   
-module.exports.entityCache = entityCache;
+module.exports.assetCache = assetCache;
+module.exports.propertyCache = propertyCache;
 /*
 console.log(LRU.length);
 
