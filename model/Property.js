@@ -3,11 +3,10 @@ const Config = require('../configuration.js');
 
 const sequelize = Config.getSequelize();
 
-const Asset = require('./Instrument.js');
-
-const Instrument = sequelize.define('property', {
+const Property = sequelize.define('property', {
     name: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        primaryKey: true
     },
     formula : {
         type : Sequelize.STRING
@@ -16,4 +15,4 @@ const Instrument = sequelize.define('property', {
     underscored: true
   });
 
-module.exports = Instrument;
+module.exports = Property;
