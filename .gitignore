@@ -1,1 +1,6 @@
 market_instruments.xlsx
+_old/*
+*.tmp
+.vscode/*
+docs/*
+node_modules/*
