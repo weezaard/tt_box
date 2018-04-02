@@ -4,7 +4,8 @@ const seed = require('./seed');
 const Config = require('./configuration.js');
 const util = require('./modules/util.js');
 const Cache = require('./cache');
-var calcProps = require('./modules/calc_props');
+const calcProps = require('./modules/calc_props');
+const xlsxSerializer = require('./modules/xlsx_serializer');
 
 async function main() {
     try {
@@ -38,10 +39,13 @@ async function main() {
        
         //console.log(calcProps);
         console.log('Calling calc props');
-        await calcProps(assetName);
+        let calculatedProperties = await calcProps(assetName);
         console.log('Calc props executed');
+
+        xlsxSerializer.writePropertiesData(calculatedProperties.data);
     } catch (err) {
         console.error('Prislo je do napake');
+        console.error(err);
     } finally {
         Config.getSequelize().close();  // s tem zapremo connectione, sicer se proces ne ustavi        
     }
