@@ -41,7 +41,7 @@ module.exports.bulkCreate = function() {
         .then(() => { console.log('btc cache = ' + Cache.assetCache.get('BTC').name)}).then()        
         ,
         Property.bulkCreate(
-            properties.map(p => { return { name: p[0], formula: p[1] } })
+            properties.map((p, i) => { return { name: p[0], formula: p[1], index: i } })
         ).then((arrOfProperties) => {
             arrOfProperties.map(p => Cache.propertyCache.set(p.name, p));
         })

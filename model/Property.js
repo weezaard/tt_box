@@ -8,6 +8,10 @@ const Property = sequelize.define('property', {
         type: Sequelize.STRING,
         primaryKey: true
     },
+    index: {
+        type: Sequelize.INTEGER,
+        notNull: true
+    },
     formula : {
         type : Sequelize.STRING
     }
