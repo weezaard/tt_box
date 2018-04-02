@@ -4,3 +4,4 @@ _old/*
 .vscode/*
 docs/*
 node_modules/*
+out.xlsb
