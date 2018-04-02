@@ -4,12 +4,14 @@ const seed = require('./seed');
 const Config = require('./configuration.js');
 const util = require('./modules/util.js');
 const Cache = require('./cache');
+var calcProps = require('./modules/calc_props');
 
 async function main() {
     try {
         console.log('in main');
 
-        await db.syncDb.then();
+        await db.syncDb();
+        
         await seed.bulkCreate();
 
         //console.log('ASSETS CACHE:');
@@ -18,15 +20,28 @@ async function main() {
 
         console.log('---- Database synced -----');
         
-        let data = parseXlsx();
-        //console.log(data);
+        let instrumentsData = parseXlsx();
+        console.log(`Instrument data is ${instrumentsData.length} long.`);
         //console.log(Cache.entityCache.get('BTC').name);
 
-        await db.test();
+        //await db.test();
 
-        await db.importInstrumentsForAsset(data, 'BTC');
+        let assetName = 'BTC';
+       
+        try {
+            let retAll = await db.importInstrumentsForAsset(instrumentsData, assetName);
+            console.log('Instrumenti uspesno uvozeni');
+        } catch (err) {
+            console.error(`Napaka pri kreiranju instrumentov, problematicen instrument na indeksu ${err.indeks}, \nSQL: ${err.sql}\nPodatki za uvoz: `, err.inData);
+            throw err;
+        }
+       
+        //console.log(calcProps);
+        console.log('Calling calc props');
+        await calcProps(assetName);
+        console.log('Calc props executed');
     } catch (err) {
-        console.error('Prislo je do napake', err);
+        console.error('Prislo je do napake');
     } finally {
         Config.getSequelize().close();  // s tem zapremo connectione, sicer se proces ne ustavi        
     }
@@ -47,8 +62,13 @@ function parseXlsx() {
         i++;
         if (typeof date == 'undefined' || !date) continue;
         //console.log(date + '::' + valuesRow[i]);
-        data.push({ date : date, val : valuesRow[i]});
-        //if (i > 4) break;
+        if (isNaN(valuesRow[i])) {
+            console.log(`Value not a number: ${valuesRow[i]} at index ${i}, skipping data cell.`);
+            //throw new Error('Value not a number!');
+            continue;
+        }
+        data.push({ date : date, val : parseFloat(valuesRow[i]) });
+        if (i > 4) break;
     }
 
     return data;
