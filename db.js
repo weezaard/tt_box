@@ -19,55 +19,59 @@ var syncOptions = {
  */
 Instrument.belongsTo(Asset);
 PropertyValue.belongsTo(Property, { foreignKey: 'property_name' });
+PropertyValue.belongsTo(Asset);
 
-let promiseAsset = new Promise((resolve, reject) => {
-    Asset.sync(syncOptions).then(() => {
+
+
+
+module.exports.syncDb = async function() {
+    let promiseAsset = Asset.sync(syncOptions).then(() => {
         return Instrument.sync(syncOptions);    
-    }).then((o) => {
-        resolve(o);
-    }).catch((err) => {
-        console.error('Prislo je do napake pri sinhronizaciji Asset objektov.', err);
-        reject(err);
     });
-});
 
-let promiseProperty = new Promise((resolve, reject) => {
-    Property.sync(syncOptions).then(() => {
-        return PropertyValue.sync(syncOptions);    
-    }).then((o) => {
-        resolve(o);
-    }).catch((err) => {
-        console.error('Prislo je do napake pri sinhronizaciji Property objektov.', err);
-        reject(err);
+    let promiseProperty = Property.sync(syncOptions).then(() => {
+        return PropertyValue.sync(syncOptions);
     });
-});
 
-module.exports.syncDb = Promise.all([ 
-    promiseAsset, promiseProperty
-]);
+    return Promise.all([ 
+        promiseAsset, 
+        promiseProperty
+    ])
+};
 
 module.exports.importInstrumentsForAsset = async function(data, asset_name) {
     var asset = Cache.assetCache.get(asset_name);
-    console.log('asset_name='+asset_name);
-    console.log('cache='+Cache.assetCache.get('BTC').name);
+    //console.log('asset_name='+asset_name);
+    //console.log('cache='+Cache.assetCache.get('BTC').name);
 
-    return Promise.all(data.map((entry) => {
-        return Instrument.create({
+    return Promise.all(data.map((entry, i, origData) => {
+        //console.log(`value at ${i}: ${entry.val}`);
+        let newInstrument = Instrument.create({
             date_of_value: util.parseXlsxDate(entry.date),
-            value: entry.val,
+            value: parseFloat(entry.val),
             asset_name: asset.name
+        }).catch((err) => { 
+            //return err 
+            err.indeks = i;
+            err.inData = origData[i];
+            throw err;
         });
-    }));
-    /*
-    for (let entry of data) {
-        //console.log(`try ${asset.name}`);
-        await Instrument.create({
-            date_of_value: util.parseXlsxDate(entry.date),
-            value: entry.val,
-            asset_name: asset.name
-        })
-    }
-    */
+        /*
+        .catch((err) => { 
+            throw err;  // ko se zgodi prva napaka, jo bo prestregel spodnji catch, to je default delovanje, ce sploh ni te kode
+            return err; // razlika je med throw in return... ce das return ga spodnji catch ne bo prestregel...
+        });
+        */
+       return newInstrument;
+    }))
+    /*.catch((err) => {
+        // prestreze prvo napako, ki se zgodi v kateremkoli Promise-u v array-u Promise.all
+        console.error(`Pri kreiranju instrumentov so se zgodile napake, prva napaka: ${err.name}, \nSQL: ${err.sql}`);
+        //throw err;
+        //return err;   //ce dam return, se err ne bo vrgel tam kjer se je funkcija importInstrumentsForAsset klicala
+    })*/
+    ;
+   
 }
 
 let test = async function() {
