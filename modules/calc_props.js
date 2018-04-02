@@ -13,8 +13,6 @@ async function calcProps(assetName) {
 
     let i = 0;
     for (let prop of properties) {
-        //console.log(JSON.stringify(prop));
-        //console.log(prop.name);
         try {
             let FormulaClass = require(`../formula/${prop.name}`);
             context.currentIndex = i;
@@ -22,14 +20,14 @@ async function calcProps(assetName) {
             formula.execute();
             let results = formula.results();
             context.setValues(prop.name, results);
-            console.log(`context after executing '${prop.name}: '` ,context);
-            //console.log(context);
+            //console.log(`context after executing '${prop.name}: '` ,context);
         } catch (err){ 
             console.error(`Error executing formula '${prop.name}'.`, err);
             throw err;
         }
     }
 
+    return context;
 }
 
 module.exports = calcProps;
