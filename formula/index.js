@@ -7,7 +7,7 @@ class formula extends AbstractFormula {
         //console.log(this.context);
         
         for (let i in this.context.dataMap['SLV']) {
-            this.ret.push(i);
+            this.ret.push(parseInt(i)+1);
         }
     }
 
