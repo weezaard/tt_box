@@ -39,6 +39,35 @@ module.exports.syncDb = async function() {
     ])
 };
 
+module.exports.savePropertyValues = async function(calculatedProperties, asset_name) {
+    var asset = Cache.assetCache.get(asset_name);
+
+    return Promise.all(
+        calculatedProperties.propertyNames.map((propertyName, i, origData) => {
+            if (propertyName=='SLV') return;
+            return saveValues(propertyName, calculatedProperties.getValues(propertyName), asset);
+        })
+    );
+}
+
+async function saveValues(propertyName, values, asset) {
+    console.log(`Saving prop ${propertyName} with values ${values}`);
+    return Promise.all(values.map((entry, i, origData) => {
+        let newPropVal = PropertyValue.create({
+            property_name : propertyName,
+            index : parseInt(i)+1,
+            value : entry,
+            asset_name: asset.name
+        }).catch((err) => { 
+            //return err 
+            err.indeks = i;
+            err.inData = origData[i];
+            throw err;
+        });
+        return newPropVal;
+    }));
+}
+
 module.exports.importInstrumentsForAsset = async function(data, asset_name) {
     var asset = Cache.assetCache.get(asset_name);
     //console.log('asset_name='+asset_name);

@@ -42,6 +42,14 @@ async function main() {
         let calculatedProperties = await calcProps(assetName);
         console.log('Calc props executed');
 
+        try {
+            await db.savePropertyValues(calculatedProperties, assetName);
+            console.log('Property values uspesno zapisani v bazo.');
+        } catch (err) {
+            console.error(`Napaka pri kreiranju vrednosti propertijev, problematicen instrument na indeksu ${err.indeks}, \nSQL: ${err.sql}\nPodatki za uvoz: `, err.inData);
+            throw err;
+        }
+
         xlsxSerializer.writePropertiesData(calculatedProperties.data);
     } catch (err) {
         console.error('Prislo je do napake');
@@ -72,7 +80,7 @@ function parseXlsx() {
             continue;
         }
         data.push({ date : date, val : parseFloat(valuesRow[i]) });
-        if (i > 8) break;
+        if (i > 12) break;
     }
 
     return data;
