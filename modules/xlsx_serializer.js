@@ -1,6 +1,7 @@
 const XLSX = require('xlsx');
 
-function writePropertiesData(data) {
+function writePropertiesData(calculatedProperties) {
+    let data = calculatedProperties.data;
     //console.log(data.data['SLV']);
     //return;
     var wsRows = [];
