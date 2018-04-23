@@ -26,6 +26,7 @@ function writePropertiesData(data) {
     let ws = XLSX.utils.aoa_to_sheet(wsRows);
     XLSX.utils.book_append_sheet(workbook, ws, "Market instruments properties");
     XLSX.writeFile(workbook, 'out.xlsb');
+    console.log('out.xlsb file successfully created.');
 }
 
 function test() {
