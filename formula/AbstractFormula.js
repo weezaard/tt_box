@@ -24,7 +24,7 @@ class AbstractFormula {
         let x2 = xValues[i];
         let y2 = yValues[i];
         let slope = this.getSlopeAngle([x1, y1], [x2, y2]);
-        console.log(`i=${i}, x1=${x1}, y1=${y1}, x2=${x2}, y2=${y2}, slope=${slope}`);
+        //console.log(`i=${i}, x1=${x1}, y1=${y1}, x2=${x2}, y2=${y2}, slope=${slope}`);
         return slope;
     }
 
