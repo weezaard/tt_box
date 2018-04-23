@@ -9,6 +9,11 @@ const PropertyValue = sequelize.define('property_value', {
         type: Sequelize.STRING,
         allowNull: false
     },
+    index: {
+        primaryKey: true,
+        type: Sequelize.INTEGER,
+        allowNull: false
+    },
     value: {
         type: Sequelize.DECIMAL
     },
