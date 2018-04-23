@@ -6,7 +6,11 @@ const sequelize = Config.getSequelize();
 const Asset = require('./Asset.js');
 
 const Instrument = sequelize.define('instrument', {
-     date_of_value: {
+    index: {
+      primaryKey: true,
+      type: Sequelize.INTEGER
+    },
+    date_of_value: {
       type: Sequelize.DATE,
       allowNull: false
     },

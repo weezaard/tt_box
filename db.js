@@ -51,7 +51,7 @@ module.exports.savePropertyValues = async function(calculatedProperties, asset_n
 }
 
 async function saveValues(propertyName, values, asset) {
-    console.log(`Saving prop ${propertyName} with values ${values}`);
+    //console.log(`Saving prop ${propertyName} with values ${values}`);
     return Promise.all(values.map((entry, i, origData) => {
         let newPropVal = PropertyValue.create({
             property_name : propertyName,
@@ -78,6 +78,7 @@ module.exports.importInstrumentsForAsset = async function(data, asset_name) {
         let newInstrument = Instrument.create({
             date_of_value: util.parseXlsxDate(entry.date),
             value: parseFloat(entry.val),
+            index: i,
             asset_name: asset.name
         }).catch((err) => { 
             //return err 
