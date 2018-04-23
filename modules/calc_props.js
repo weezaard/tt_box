@@ -9,7 +9,12 @@ async function calcProps(assetName) {
     let properties = await Property.findAll();
 
     let context = new FormulaContext();
-    context.setValues('SLV', instruments.map((i) => i.value));
+    let slValues = new Array();
+    instruments.forEach((instrument) => {
+        slValues[instrument.index] = instrument.value;
+    });
+    //context.setValues('SLV', instruments.map((i) => i.value));
+    context.setValues('SLV', slValues);
 
     let i = 0;
     for (let prop of properties) {
