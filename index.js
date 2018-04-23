@@ -72,7 +72,7 @@ function parseXlsx() {
             continue;
         }
         data.push({ date : date, val : parseFloat(valuesRow[i]) });
-        if (i > 4) break;
+        if (i > 8) break;
     }
 
     return data;
