@@ -6,6 +6,9 @@ const util = require('./modules/util.js');
 const Cache = require('./cache');
 const calcProps = require('./modules/calc_props');
 const xlsxSerializer = require('./modules/xlsx_serializer');
+const SimplTaktika = require('./taktike/SimplTaktika');
+const TestTaktika = require('./taktike/TestTaktika');
+const Trader = require('./trading/Trader');
 
 async function main() {
     try {
@@ -42,6 +45,9 @@ async function main() {
         let calculatedProperties = await calcProps(assetName);
         console.log('Calc props executed');
 
+        /**
+         * Persist data to database and excel file.
+         */
         try {
             await db.savePropertyValues(calculatedProperties, assetName);
             console.log('Property values uspesno zapisani v bazo.');
@@ -50,7 +56,20 @@ async function main() {
             throw err;
         }
 
-        xlsxSerializer.writePropertiesData(calculatedProperties.data);
+        xlsxSerializer.writePropertiesData(calculatedProperties);
+
+        /**
+         * Run tactics on data
+         */
+        let t1 = new TestTaktika(calculatedProperties.data);
+        /*
+        calculatedProperties.getValues('index').forEach((val, i) => {
+            console.log(t1.predict(i)[0]);
+        })
+        */
+        //console.log(calculatedProperties.data['SimplTaktika']);
+        let trader = new Trader(t1, calculatedProperties.data);
+        trader.run();
     } catch (err) {
         console.error('Prislo je do napake');
         console.error(err);
@@ -80,7 +99,7 @@ function parseXlsx() {
             continue;
         }
         data.push({ date : date, val : parseFloat(valuesRow[i]) });
-        if (i > 12) break;
+        //if (i > 20) break;
     }
 
     return data;
