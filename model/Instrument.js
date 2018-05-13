@@ -14,6 +14,9 @@ const Instrument = sequelize.define('instrument', {
       type: Sequelize.DATE,
       allowNull: false
     },
+    unix_ts: {
+      type: Sequelize.BIGINT
+    },
     value: {
         type: Sequelize.DECIMAL
     },
