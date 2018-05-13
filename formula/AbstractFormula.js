@@ -30,7 +30,8 @@ class AbstractFormula {
 
     calculatePercChange(values, i) {
         let valueMinus1 = parseFloat(values[i-1]);
-        return ((parseFloat(values[i]) - valueMinus1) / valueMinus1) * 100;
+        let ret = ((parseFloat(values[i]) - valueMinus1) / valueMinus1) * 100;
+        return ret;
 
     }
 
