@@ -9,7 +9,10 @@
   "author": "Matjaz Bohoric & Gorazd Pangric",
   "license": "ISC",
   "dependencies": {
+    "csv": "^3.0.2",
     "date-and-time": "^0.6.2",
+    "event-stream": "^3.3.4",
+    "kraken-api": "^1.0.0",
     "lru-cache": "^4.1.2",
     "pg": "^7.4.1",
     "sequelize": "^4.37.5",
