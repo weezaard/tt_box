@@ -4,7 +4,7 @@ const Property = require('./model/Property');
 const Cache = require('./cache');
 
 let assets = [
-    [ 'BTC', 'Bitcoin' ],
+    [ 'XXBTZEUR', 'Bitcoin/EUR' ],
     [ 'ETH', 'Ethereum' ],
     [ 'LTC', 'Litecoin' ],
     [ 'XMR', 'Monero' ]
@@ -38,7 +38,7 @@ module.exports.bulkCreate = function() {
         ).then((arrOfAssets) => {
             arrOfAssets.map(a => Cache.assetCache.set(a.name, a));
         })
-        .then(() => { console.log('btc cache = ' + Cache.assetCache.get('BTC').name)}).then()        
+        .then(() => { console.log('btc cache = ' + Cache.assetCache.get('XXBTZEUR').name)}).then()        
         ,
         Property.bulkCreate(
             properties.map((p, i) => { return { name: p[0], formula: p[1], index: i } })
@@ -54,6 +54,7 @@ module.exports.bulkCreate = function() {
  * in ga ustvari sele, ce ga v bazi ni.
  * Pocasno, ampak kompatibilno s polno bazo.
  */
+/*
 module.exports.executeFindOrCreate = function() {
     // todo, simplify this, map through the asset var
     return Promise.all([
@@ -62,6 +63,7 @@ module.exports.executeFindOrCreate = function() {
         findOrCreateAsset('LTC','Litecoin'),
     ])
 }
+*/
 
 function findOrCreateAsset(shortName, longName) {
     return new Promise((resolve, reject) => {
