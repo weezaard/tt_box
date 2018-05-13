@@ -9,9 +9,9 @@ class TestTaktika extends Taktika {
 
         let movement = 0;
         if (rpc[i] < 0) {
-            movement = 1;
-        } else {
             movement = -1;
+        } else {
+            movement = 1;
         }
         let confidence = 0;
 
