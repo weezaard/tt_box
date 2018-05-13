@@ -6,3 +6,4 @@ docs/*
 node_modules/*
 *.xlsb
 *.xlsx
+modules/kraken.js
