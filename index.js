@@ -9,45 +9,62 @@ const xlsxSerializer = require('./modules/xlsx_serializer');
 const SimplTaktika = require('./taktike/SimplTaktika');
 const TestTaktika = require('./taktike/TestTaktika');
 const Trader = require('./trading/Trader');
+const Kraken = require('./modules/kraken');
+const CsvParser = require('./modules/csv_parser');
 
 async function main() {
     try {
         console.log('in main');
+        let assetName = 'XXBTZEUR';
 
+        // prepare CSV file for import
+        //let parsedCsv = await CsvParser.parseOHLCData();
+
+        // synchronize data model
         await db.syncDb();
-        
+
+        // seed data
         await seed.bulkCreate();
 
-        //console.log('ASSETS CACHE:');
-        //console.log(seed.cache.assets['BTC'].long_name);
-        //dbCache = seed.cache;
+        // import data from the CSV file
+        //await db.importInstrumentsFromCsv('./data/hourly.csv', assetName);
+        //console.log('Imported instruments');
 
         console.log('---- Database synced -----');
+
+        // check timestamp of the last instrument in the database
+        let lastInstrument = await db.getLastInstrument(assetName);
+        let lastUnixTs;
+        let lastIndex = 0;
+        if (lastInstrument) {
+            lastUnixTs = lastInstrument.unix_ts;
+            lastIndex = lastInstrument.index;
+        }
+        console.log(`last ts = ${lastUnixTs}, last index = ${lastIndex}`);
         
-        let instrumentsData = parseXlsx();
+        // get latest price data from Kraken API (from the last db instrument timestamp onward)
+        let instrumentsData = await Kraken.getInstrumentData(assetName, 60, lastUnixTs);
         console.log(`Instrument data is ${instrumentsData.length} long.`);
-        //console.log(Cache.entityCache.get('BTC').name);
-
-        //await db.test();
-
-        let assetName = 'BTC';
-       
+        
+        // insert data from Kraken API to database
         try {
-            let retAll = await db.importInstrumentsForAsset(instrumentsData, assetName);
+            let retAll = await db.appendInstrumentsForAsset(instrumentsData, assetName, lastIndex);
             console.log('Instrumenti uspesno uvozeni');
         } catch (err) {
             console.error(`Napaka pri kreiranju instrumentov, problematicen instrument na indeksu ${err.indeks}, \nSQL: ${err.sql}\nPodatki za uvoz: `, err.inData);
             throw err;
         }
        
-        //console.log(calcProps);
+        // TODO - calc properties se ne da nujno izvest vse v memory, ker je prevec podatkov
+        // kodo je potrebno napisati tako, da ne pozre toliko memorije... verjetno procesiranje v batchih
+        return; 
+        
+        // calculate instrument properties
         console.log('Calling calc props');
         let calculatedProperties = await calcProps(assetName);
         console.log('Calc props executed');
-
-        /**
-         * Persist data to database and excel file.
-         */
+        
+        // Persist property values to the database.
         try {
             await db.savePropertyValues(calculatedProperties, assetName);
             console.log('Property values uspesno zapisani v bazo.');
@@ -69,7 +86,7 @@ async function main() {
         */
         //console.log(calculatedProperties.data['SimplTaktika']);
         let trader = new Trader(t1, calculatedProperties.data);
-        trader.run();
+        //trader.run();
     } catch (err) {
         console.error('Prislo je do napake');
         console.error(err);
@@ -98,8 +115,8 @@ function parseXlsx() {
             //throw new Error('Value not a number!');
             continue;
         }
-        data.push({ date : date, val : parseFloat(valuesRow[i]) });
-        //if (i > 20) break;
+        data.push({ date : util.parseXlsxDate(date), val : parseFloat(valuesRow[i]) });
+        if (i > 4) break;
     }
 
     return data;
