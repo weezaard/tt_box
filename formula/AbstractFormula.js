@@ -5,7 +5,7 @@ class AbstractFormula {
         this.ret = [];
     }
 
-    execute() {
+    execute(lastIndex) {
         throw new Error(`formula class '${this.constructor.name}' should implement the execute() method.`);
     }
 

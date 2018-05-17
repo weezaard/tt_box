@@ -14,7 +14,7 @@ const PropertyValue = require('./model/PropertyValue');
 const util = require('./modules/util.js');
 
 var syncOptions = {
-    force: true
+    force: false
 };
 
 var syncOptionsNoForce = {
@@ -46,23 +46,36 @@ module.exports.syncDb = async function() {
     ])
 };
 
-module.exports.savePropertyValues = async function(calculatedProperties, asset_name) {
+module.exports.savePropertyValues = async function(calculatedProperties, asset_name, lastIndex) {
     var asset = Cache.assetCache.get(asset_name);
+    if (asset==null || asset==undefined) {
+        throw `Missing asset for '${asset_name}'`;
+    }
 
+    for (propertyName of calculatedProperties.propertyNames) {
+        if (propertyName=='SLV' || propertyName=='index') continue;
+        console.log(`saving property data for ${propertyName}`);
+        await saveValues(propertyName, calculatedProperties.getValues(propertyName), asset, lastIndex);
+        //console.log(`data for ${propertyName} saved in database`);
+    }
+
+    /* koda spodaj doseze OOM... prevec asinhronosti :)
     return Promise.all(
         calculatedProperties.propertyNames.map((propertyName, i, origData) => {
             if (propertyName=='SLV') return;
             return saveValues(propertyName, calculatedProperties.getValues(propertyName), asset);
         })
     );
+    */
 }
 
-async function saveValues(propertyName, values, asset) {
+async function saveValues(propertyName, values, asset, lastIndex) {
     //console.log(`Saving prop ${propertyName} with values ${values}`);
     return Promise.all(values.map((entry, i, origData) => {
+        if (i <= lastIndex) return null;
         let newPropVal = PropertyValue.create({
             property_name : propertyName,
-            index : parseInt(i)+1,
+            index : i,
             value : entry,
             asset_name: asset.name
         }).catch((err) => { 
@@ -78,9 +91,19 @@ async function saveValues(propertyName, values, asset) {
 module.exports.getLastInstrument = async function(assetName) {
     let lastInstrument = await Instrument.findAll({ 
         limit: 1,
-        order: [ [ 'date_of_value', 'DESC' ] ]
+        order: [ [ 'date_of_value', 'DESC' ] ],
+        where: { asset_name: assetName }
     });
     return lastInstrument[0];
+}
+
+module.exports.getLastPropertyValue = async function(assetName) {
+    let lastPropertyValue = await PropertyValue.findAll({ 
+        limit: 1,
+        order: [ [ 'index', 'DESC' ] ],
+        //where: { asset_name: assetName }
+    });
+    return lastPropertyValue[0];
 }
 
 module.exports.importInstrumentsFromCsv = async function(fileName, assetName) {
@@ -135,6 +158,9 @@ function streamToPromise(stream) {
  */
 module.exports.appendInstrumentsForAsset = async function(data, asset_name, lastIndex) {
     var asset = Cache.assetCache.get(asset_name);
+    if (asset==null) {
+        throw `Asset ${asset_name} missing in database`;
+    }
     //console.log('asset_name='+asset_name);
     //console.log('cache='+Cache.assetCache.get('BTC').name);
 
@@ -172,38 +198,12 @@ module.exports.appendInstrumentsForAsset = async function(data, asset_name, last
    
 }
 
-let test = async function() {
-
-    
-
-    /*
-    let [ asset, created]  = await Asset.findOrCreate({
-        where : { name : "BTC" },
-        defaults : { name : 'BTC', long_name : 'Bitcoin' }
-    });
-
-    console.log('asset=', JSON.stringify(asset));
-
-    let newInstrument = Instrument.build({
-        date_of_value : util.parseXlsxDate('4/15/18'),
-        value: 3.234,
-        asset_name: asset.name
-    });
-    
-    await newInstrument.save();
-    */
-    
-    /**
-     * Disclaimer!!!
-     * Ce naredis najprej prazno instanco z build() ukazom, potem
-     * na tej instanci klices setAsset(assetKiSiGaPrejZloadal), bo zadeva
-     * crknila, ker setAsset ne naredi drugega kot samo nastavi asociacijo
-     * In ker objekt v bazi se ne obstaja, zadeva crkne. Kr neki.
-     * 
-     * https://github.com/sequelize/sequelize/issues/2582
-     */
-    //await newInstrument.setAsset(asset);
-   
-}
-
-module.exports.test = test;
+/**
+ * Disclaimer!!!
+ * Ce naredis najprej prazno instanco z build() ukazom, potem
+ * na tej instanci klices setAsset(assetKiSiGaPrejZloadal), bo zadeva
+ * crknila, ker setAsset ne naredi drugega kot samo nastavi asociacijo
+ * In ker objekt v bazi se ne obstaja, zadeva crkne. Kr neki.
+ * 
+ * https://github.com/sequelize/sequelize/issues/2582
+ */

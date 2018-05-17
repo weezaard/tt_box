@@ -2,11 +2,12 @@ const AbstractFormula = require('./AbstractFormula');
 
 class formula extends AbstractFormula {
 
-    execute() {
+    execute(lastIndex) {
         let slv = this.context.getValues('SLV');
         let days = 7;
 
         for (let i in slv) {
+            if (i <= lastIndex) continue;
             if (i < days) {
                 this.ret[i] = null;
                 continue;

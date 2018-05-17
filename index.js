@@ -14,24 +14,31 @@ const CsvParser = require('./modules/csv_parser');
 
 async function main() {
     try {
-        console.log('in main');
+        console.log('====== CARBON BASED TRADING BOT commencing operation... =====');
         let assetName = 'XXBTZEUR';
 
         // prepare CSV file for import
         //let parsedCsv = await CsvParser.parseOHLCData();
 
         // synchronize data model
+        console.log(`---- Syncing database ----`);
         await db.syncDb();
+        console.log('Database synced');
 
         // seed data
-        await seed.bulkCreate();
+        console.log(`\n---- Seeding data and filling CACHE ----`);
+        await seed.seedData();
+        //await seed.bulkCreate();
+        console.log('data seeded in database');
+        
+        if (false) {
+            console.log(`\n----- Bulk importing data from CSV file for asset ${assetName}`);
+            // import data from the CSV file
+            await db.importInstrumentsFromCsv('./data/hourly.csv', assetName);
+            console.log('Imported instruments from CSV file');
+        }
 
-        // import data from the CSV file
-        //await db.importInstrumentsFromCsv('./data/hourly.csv', assetName);
-        //console.log('Imported instruments');
-
-        console.log('---- Database synced -----');
-
+        console.log(`\n----- Getting last instrument for ${assetName}`);
         // check timestamp of the last instrument in the database
         let lastInstrument = await db.getLastInstrument(assetName);
         let lastUnixTs;
@@ -40,40 +47,49 @@ async function main() {
             lastUnixTs = lastInstrument.unix_ts;
             lastIndex = lastInstrument.index;
         }
-        console.log(`last ts = ${lastUnixTs}, last index = ${lastIndex}`);
+        console.log(`last ts = ${lastUnixTs}, last index in db = ${lastIndex}`);
         
-        // get latest price data from Kraken API (from the last db instrument timestamp onward)
-        let instrumentsData = await Kraken.getInstrumentData(assetName, 60, lastUnixTs);
-        console.log(`Instrument data is ${instrumentsData.length} long.`);
-        
-        // insert data from Kraken API to database
-        try {
-            let retAll = await db.appendInstrumentsForAsset(instrumentsData, assetName, lastIndex);
-            console.log('Instrumenti uspesno uvozeni');
-        } catch (err) {
-            console.error(`Napaka pri kreiranju instrumentov, problematicen instrument na indeksu ${err.indeks}, \nSQL: ${err.sql}\nPodatki za uvoz: `, err.inData);
-            throw err;
+        let numberOfNewInstruments = 0;
+        if (true) {
+            console.log('\n---- Fetching data from Kraken ----')
+            numberOfNewInstruments = await fetchLatestOHLC(assetName, lastIndex, lastUnixTs);
+            console.log(`.. fetched ${numberOfNewInstruments} new OHLC instruments from API.`);
         }
        
+        if (parseInt(numberOfNewInstruments) == 0) {
+            console.log(`\n **** NO NEW DATA, aborting further calculations ****`);
+            return;
+        }
+
         // TODO - calc properties se ne da nujno izvest vse v memory, ker je prevec podatkov
-        // kodo je potrebno napisati tako, da ne pozre toliko memorije... verjetno procesiranje v batchih
-        return; 
+        // kodo je potrebno napisati tako, da ne pozre toliko memorije... verjetno procesiranje v batchih        
+        console.log(`\n---- Fetching latest property value for asset ${assetName} ----`);
+        let lastCalculatedProperty = await db.getLastPropertyValue(assetName);
+        if (lastCalculatedProperty!=null) {
+            console.log(`Last calculated property value index = ${lastCalculatedProperty.index}`);
+        } else {
+            console.log('No property values exist in the database yet!');
+        }
         
         // calculate instrument properties
-        console.log('Calling calc props');
-        let calculatedProperties = await calcProps(assetName);
+        console.log(`\n---- Calling calcProps for asset ${assetName} ----`);
+        let calculatedProperties = await calcProps(assetName, lastCalculatedProperty);
         console.log('Calc props executed');
-        
+        //return;
+
         // Persist property values to the database.
         try {
-            await db.savePropertyValues(calculatedProperties, assetName);
+            console.log(`\n---- Saving property values to database for asset ${assetName} ----`);
+            await db.savePropertyValues(calculatedProperties, assetName, lastCalculatedProperty.index);
             console.log('Property values uspesno zapisani v bazo.');
         } catch (err) {
             console.error(`Napaka pri kreiranju vrednosti propertijev, problematicen instrument na indeksu ${err.indeks}, \nSQL: ${err.sql}\nPodatki za uvoz: `, err.inData);
             throw err;
         }
+        return; 
 
-        xlsxSerializer.writePropertiesData(calculatedProperties);
+        console.log('\n---- Persisting data to excel file. ----');
+        //xlsxSerializer.writePropertiesData(calculatedProperties);
 
         /**
          * Run tactics on data
@@ -88,10 +104,24 @@ async function main() {
         let trader = new Trader(t1, calculatedProperties.data);
         //trader.run();
     } catch (err) {
-        console.error('Prislo je do napake');
+        console.error('\n!!!!!!!!!!! Prislo je do napake !!!!!!!!!!!!!');
         console.error(err);
     } finally {
         Config.getSequelize().close();  // s tem zapremo connectione, sicer se proces ne ustavi        
+    }
+}
+
+async function fetchLatestOHLC(assetName, lastIndex, lastUnixTs) {
+    // get latest price data from Kraken API (from the last db instrument timestamp onward)
+    let instrumentsData = await Kraken.getInstrumentData(assetName, 60, lastUnixTs);
+    
+    // insert data from Kraken API to database
+    try {
+        let retAll = await db.appendInstrumentsForAsset(instrumentsData, assetName, lastIndex);
+        return instrumentsData.length;
+    } catch (err) {
+        console.error(`Napaka pri kreiranju instrumentov, problematicen instrument na indeksu ${err.indeks}, \nSQL: ${err.sql}\nPodatki za uvoz: `, err.inData);
+        throw err;
     }
 }
 
